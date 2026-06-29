@@ -8,7 +8,7 @@ import numpy as np
 from PIL import Image
 from shapely.geometry import shape
 
-from calibration import check_image_size, geo_to_pixel
+from calibration import geo_to_pixel, get_template
 
 BOUNDARIES_PATH = Path(__file__).resolve().parent.parent / "Boundaries" / "Dasarxeia.geojson"
 
@@ -70,14 +70,14 @@ def extract_risk_levels(image_path: Union[str, Path]) -> list:
     """Return a list of {district, risk_level, risk_name, confidence_ok} dicts."""
     image_path = Path(image_path)
     im = Image.open(image_path).convert("RGB")
-    check_image_size(im.size)
+    template = get_template(im.size)
     arr = np.array(im)
     h, w, _ = arr.shape
 
     results = []
     for name, geom in _load_districts():
         rp = geom.representative_point()
-        px, py = geo_to_pixel(rp.x, rp.y)
+        px, py = geo_to_pixel(rp.x, rp.y, template)
         px, py = int(round(px)), int(round(py))
         if not (0 <= px < w and 0 <= py < h):
             results.append(
