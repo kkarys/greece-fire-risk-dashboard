@@ -5,3 +5,7 @@ numpy
 pillow
 shapely
 requests
+openpyxl
+folium
+streamlit-folium
+pyproj

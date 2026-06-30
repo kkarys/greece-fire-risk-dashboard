@@ -1,0 +1,19 @@
+year,issue_type,affected_rows
+2020,end_date before start_date (row dropped),2
+2020,"placeholder (0,0)/Not Found coordinates (nulled)",427
+2020,prefecture spelling normalized,632
+2021,end_date before start_date (row dropped),5
+2021,"placeholder (0,0)/Not Found coordinates (nulled)",2
+2021,prefecture spelling normalized,482
+2022,"placeholder (0,0)/Not Found coordinates (nulled)",807
+2022,prefecture spelling normalized,521
+2022,"record_id reused across years (kept, given unique incident_id)",1
+2023,end_date before start_date (row dropped),2
+2023,"placeholder (0,0)/Not Found coordinates (nulled)",678
+2023,prefecture spelling normalized,242
+2023,"record_id reused across years (kept, given unique incident_id)",499
+2024,end_date before start_date (row dropped),1
+2024,prefecture spelling normalized,277
+2024,"record_id reused across years (kept, given unique incident_id)",12
+2025,end_date before start_date (row dropped),126
+2025,"record_id reused across years (kept, given unique incident_id)",512
