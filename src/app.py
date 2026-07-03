@@ -135,20 +135,26 @@ def build_synthesis_map(
     if show_incidents and incidents_mtime is not None:
         matched = _matching_fire_incidents(incidents_mtime, risk_year, risk_month, risk_day)
         incidents_layer = folium.FeatureGroup(name=f"Fire incidents ({len(matched)})")
+        # Graduated symbol: radius scaled by sqrt(burned_total), clamped to [4, 30]
+        import math
+        max_burned = matched["burned_total"].max() if len(matched) else 1
+        max_burned = max_burned if max_burned > 0 else 1
         for _, row in matched.iterrows():
+            burned = row.get("burned_total") or 0
+            radius = max(4, min(30, 4 + 26 * math.sqrt(burned / max_burned)))
             popup_html = (
                 f"<b>{row['start_date'].date()}</b> {row.get('start_time', '')}<br>"
                 f"{row.get('service', '')}<br>"
                 f"{row.get('prefecture', '')} — {row.get('area', '')}<br>"
-                f"Burned: {row.get('burned_total', 0):.2f} στρέμματα"
+                f"Burned: {burned:,.2f} στρέμματα"
             )
             folium.CircleMarker(
                 location=[row["y_engage"], row["x_engage"]],
-                radius=5,
+                radius=radius,
                 color="#000000",
-                weight=1,
+                weight=0.5,
                 fillColor="#ff6f00",
-                fillOpacity=0.85,
+                fillOpacity=0.7,
                 popup=folium.Popup(popup_html, max_width=250),
             ).add_to(incidents_layer)
         incidents_layer.add_to(m)
