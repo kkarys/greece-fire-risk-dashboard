@@ -346,6 +346,75 @@ with tab_incidents:
     )
     st.altair_chart(year_bar, use_container_width=True)
 
+    st.subheader("Burned area trends")
+
+    # --- Per year ---
+    burned_by_year = (
+        filtered.groupby("source_year")["burned_total"]
+        .sum()
+        .reset_index()
+        .rename(columns={"source_year": "year", "burned_total": "burned_area"})
+    )
+    st.markdown("**Total burned area per year (στρέμματα)**")
+    by_year_chart = (
+        alt.Chart(burned_by_year)
+        .mark_bar()
+        .encode(
+            x=alt.X("year:O", title=None),
+            y=alt.Y("burned_area:Q", title="Burned area (στρ.)"),
+            tooltip=[alt.Tooltip("year:O"), alt.Tooltip("burned_area:Q", format=",.0f", title="Burned (στρ.)")],
+        )
+        .properties(height=250)
+    )
+    st.altair_chart(by_year_chart, use_container_width=True)
+
+    # --- Per forestry district (top 20) ---
+    burned_by_district = (
+        filtered.groupby("forestry_district")["burned_total"]
+        .sum()
+        .reset_index()
+        .rename(columns={"forestry_district": "district", "burned_total": "burned_area"})
+        .dropna(subset=["district"])
+        .sort_values("burned_area", ascending=False)
+        .head(20)
+    )
+    st.markdown("**Total burned area by forestry district — top 20 (στρέμματα)**")
+    by_district_chart = (
+        alt.Chart(burned_by_district)
+        .mark_bar()
+        .encode(
+            x=alt.X("burned_area:Q", title="Burned area (στρ.)"),
+            y=alt.Y("district:N", sort="-x", title=None),
+            tooltip=[alt.Tooltip("district:N"), alt.Tooltip("burned_area:Q", format=",.0f", title="Burned (στρ.)")],
+        )
+        .properties(height=420)
+    )
+    st.altair_chart(by_district_chart, use_container_width=True)
+
+    # --- Seasonal pattern (by month) ---
+    filtered_with_month = filtered.copy()
+    filtered_with_month["month"] = filtered_with_month["start_date"].dt.month
+    burned_by_month = (
+        filtered_with_month.groupby("month")["burned_total"]
+        .sum()
+        .reindex(range(1, 13), fill_value=0)
+        .reset_index()
+        .rename(columns={"month": "month_num", "burned_total": "burned_area"})
+    )
+    burned_by_month["month_name"] = burned_by_month["month_num"].apply(lambda m: calendar.month_abbr[m])
+    st.markdown("**Seasonal pattern — total burned area by month (across all selected years)**")
+    by_month_chart = (
+        alt.Chart(burned_by_month)
+        .mark_bar()
+        .encode(
+            x=alt.X("month_name:N", sort=list(calendar.month_abbr[1:]), title=None),
+            y=alt.Y("burned_area:Q", title="Burned area (στρ.)"),
+            tooltip=[alt.Tooltip("month_name:N", title="Month"), alt.Tooltip("burned_area:Q", format=",.0f", title="Burned (στρ.)")],
+        )
+        .properties(height=250)
+    )
+    st.altair_chart(by_month_chart, use_container_width=True)
+
     st.subheader("Incident records")
     display_columns = [
         "start_date",
