@@ -86,6 +86,22 @@ def _matching_fire_incidents(incidents_mtime: float, year: int, month: int, day:
     return scoped.dropna(subset=["x_engage", "y_engage"])
 
 
+INCIDENT_CLASSES = [
+    {"label": "Small",  "radius": 5,  "max": None},  # thresholds filled at runtime
+    {"label": "Medium", "radius": 12, "max": None},
+    {"label": "Large",  "radius": 22, "max": None},
+]
+
+
+def _incident_radius(burned: float, t1: float, t2: float) -> int:
+    """Map burned area to one of 3 class radii using two thresholds."""
+    if burned <= t1:
+        return INCIDENT_CLASSES[0]["radius"]
+    elif burned <= t2:
+        return INCIDENT_CLASSES[1]["radius"]
+    return INCIDENT_CLASSES[2]["radius"]
+
+
 def build_synthesis_map(
     _dasarxeia_mtime: float,
     _dimoi_mtime: float,
@@ -97,6 +113,8 @@ def build_synthesis_map(
     risk_day: int = None,
     incidents_mtime: float = None,
     show_incidents: bool = False,
+    incident_t1: float = 0,
+    incident_t2: float = 0,
 ):
     m = folium.Map(location=[38.5, 23.7], zoom_start=7, tiles="CartoDB positron")
 
@@ -135,13 +153,9 @@ def build_synthesis_map(
     if show_incidents and incidents_mtime is not None:
         matched = _matching_fire_incidents(incidents_mtime, risk_year, risk_month, risk_day)
         incidents_layer = folium.FeatureGroup(name=f"Fire incidents ({len(matched)})")
-        # Graduated symbol: radius scaled by sqrt(burned_total), clamped to [4, 30]
-        import math
-        max_burned = matched["burned_total"].max() if len(matched) else 1
-        max_burned = max_burned if max_burned > 0 else 1
         for _, row in matched.iterrows():
             burned = row.get("burned_total") or 0
-            radius = max(4, min(30, 4 + 26 * math.sqrt(burned / max_burned)))
+            radius = _incident_radius(burned, incident_t1, incident_t2)
             popup_html = (
                 f"<b>{row['start_date'].date()}</b> {row.get('start_time', '')}<br>"
                 f"{row.get('service', '')}<br>"
@@ -465,6 +479,13 @@ def render_map_synthesis_tab():
     map_sel_day_choice = col5.selectbox("Day", day_options, key="map_day")
     map_sel_day = None if map_sel_day_choice == "Whole month (average)" else map_sel_day_choice
 
+    # Compute class thresholds from the full incident dataset (consistent across filters)
+    _inc_df = load_fire_incidents(FIRE_INCIDENTS_PATH.stat().st_mtime)
+    _burned = _inc_df["burned_total"].dropna()
+    _burned = _burned[_burned > 0]
+    inc_t1 = float(_burned.quantile(0.33)) if len(_burned) else 10
+    inc_t2 = float(_burned.quantile(0.67)) if len(_burned) else 100
+
     synthesis_map = build_synthesis_map(
         DASARXEIA_MAP_PATH.stat().st_mtime,
         DIMOI_MAP_PATH.stat().st_mtime,
@@ -476,6 +497,8 @@ def render_map_synthesis_tab():
         risk_day=map_sel_day,
         incidents_mtime=FIRE_INCIDENTS_PATH.stat().st_mtime,
         show_incidents=show_incidents,
+        incident_t1=inc_t1,
+        incident_t2=inc_t2,
     )
     st_folium(
         synthesis_map,
@@ -485,6 +508,7 @@ def render_map_synthesis_tab():
         key="synthesis_map",
     )
 
+    # Risk level legend
     legend_cols = st.columns(5)
     for col, level in zip(legend_cols, [1, 2, 3, 4, 5]):
         col.markdown(
@@ -492,6 +516,34 @@ def render_map_synthesis_tab():
             f"text-align:center;font-size:0.8em'>{RISK_NAMES[level]}</div>",
             unsafe_allow_html=True,
         )
+
+    # Fire incident size legend
+    class_labels = [
+        f"Small  (≤ {inc_t1:,.0f} στρ.)",
+        f"Medium ({inc_t1:,.0f} – {inc_t2:,.0f} στρ.)",
+        f"Large  (> {inc_t2:,.0f} στρ.)",
+    ]
+    radii = [c["radius"] for c in INCIDENT_CLASSES]
+    max_r = max(radii)
+    svg_parts = []
+    x = max_r + 4
+    for r, label in zip(radii, class_labels):
+        svg_parts.append(
+            f'<circle cx="{x}" cy="{max_r + 4}" r="{r}" '
+            f'fill="#ff6f00" fill-opacity="0.7" stroke="#000" stroke-width="0.5"/>'
+            f'<text x="{x + max_r + 6}" y="{max_r + 8}" '
+            f'font-size="12" dominant-baseline="middle" fill="currentColor">{label}</text>'
+        )
+        x += max_r * 2 + 130
+    svg_w = x + 10
+    svg_h = (max_r + 4) * 2 + 4
+    svg = (
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{svg_w}" height="{svg_h}">'
+        + "".join(svg_parts)
+        + "</svg>"
+    )
+    st.caption("Fire incident size — burned area (στρέμματα)")
+    st.markdown(svg, unsafe_allow_html=True)
 
 
 with tab_map:
