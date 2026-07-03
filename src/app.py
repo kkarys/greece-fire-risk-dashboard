@@ -348,20 +348,12 @@ with tab_incidents:
 
     st.subheader("Burned area trends")
 
-    ba_view = st.radio(
-        "View by", ["Year", "Forest agency district", "Month (seasonal pattern)"], horizontal=True
-    )
-
-    ba_col1, ba_col2, ba_col3 = st.columns(3)
+    ba_col1, ba_col2 = st.columns(2)
     all_districts = sorted(incidents_df["forestry_district"].dropna().unique())
     all_years = sorted(incidents_df["source_year"].unique())
-    all_months = list(range(1, 13))
 
     ba_district = ba_col1.selectbox("District filter", ["All"] + all_districts, key="ba_district")
     ba_year = ba_col2.selectbox("Year filter", ["All"] + [str(y) for y in all_years], key="ba_year")
-    ba_month = ba_col3.selectbox(
-        "Month filter", ["All"] + [calendar.month_name[m] for m in all_months], key="ba_month"
-    )
 
     ba_data = incidents_df.copy()
     ba_data["month"] = ba_data["start_date"].dt.month
@@ -369,63 +361,28 @@ with tab_incidents:
         ba_data = ba_data[ba_data["forestry_district"] == ba_district]
     if ba_year != "All":
         ba_data = ba_data[ba_data["source_year"] == int(ba_year)]
-    if ba_month != "All":
-        ba_month_num = list(calendar.month_name).index(ba_month)
-        ba_data = ba_data[ba_data["month"] == ba_month_num]
 
-    if ba_view == "Year":
-        agg = (
-            ba_data.groupby("source_year")["burned_total"]
-            .sum()
-            .reset_index()
-            .rename(columns={"source_year": "label", "burned_total": "burned_area"})
-            .sort_values("burned_area", ascending=False)
-            .head(20)
-        )
-        chart_enc = dict(
-            x=alt.X("label:O", sort="-y", title=None),
-            y=alt.Y("burned_area:Q", title="Burned area (στρ.)"),
-            tooltip=[alt.Tooltip("label:O", title="Year"), alt.Tooltip("burned_area:Q", format=",.0f", title="Burned (στρ.)")],
-        )
-        height = 280
-    elif ba_view == "Forest agency district":
-        agg = (
-            ba_data.groupby("forestry_district")["burned_total"]
-            .sum()
-            .reset_index()
-            .rename(columns={"forestry_district": "label", "burned_total": "burned_area"})
-            .dropna(subset=["label"])
-            .sort_values("burned_area", ascending=False)
-            .head(20)
-        )
-        chart_enc = dict(
-            x=alt.X("burned_area:Q", title="Burned area (στρ.)"),
-            y=alt.Y("label:N", sort="-x", title=None),
-            tooltip=[alt.Tooltip("label:N", title="District"), alt.Tooltip("burned_area:Q", format=",.0f", title="Burned (στρ.)")],
-        )
-        height = 420
-    else:  # Month
-        agg = (
-            ba_data.groupby("month")["burned_total"]
-            .sum()
-            .reindex(range(1, 13), fill_value=0)
-            .reset_index()
-            .rename(columns={"month": "month_num", "burned_total": "burned_area"})
-        )
-        agg["label"] = agg["month_num"].apply(lambda m: calendar.month_abbr[m])
-        agg = agg.sort_values("burned_area", ascending=False).head(20)
-        chart_enc = dict(
-            x=alt.X("label:N", sort=list(calendar.month_abbr[1:]), title=None),
-            y=alt.Y("burned_area:Q", title="Burned area (στρ.)"),
-            tooltip=[alt.Tooltip("label:N", title="Month"), alt.Tooltip("burned_area:Q", format=",.0f", title="Burned (στρ.)")],
-        )
-        height = 280
+    agg = (
+        ba_data.groupby("month")["burned_total"]
+        .sum()
+        .reindex(range(1, 13), fill_value=0)
+        .reset_index()
+        .rename(columns={"month": "month_num", "burned_total": "burned_area"})
+    )
+    agg["month_name"] = agg["month_num"].apply(lambda m: calendar.month_abbr[m])
 
     burned_chart = (
         alt.Chart(agg)
         .mark_bar()
-        .encode(**chart_enc)
-        .properties(height=height)
+        .encode(
+            x=alt.X("month_name:N", sort=list(calendar.month_abbr[1:]), title=None),
+            y=alt.Y("burned_area:Q", title="Burned area (στρ.)"),
+            tooltip=[
+                alt.Tooltip("month_name:N", title="Month"),
+                alt.Tooltip("burned_area:Q", format=",.0f", title="Burned (στρ.)"),
+            ],
+        )
+        .properties(height=280)
     )
     st.altair_chart(burned_chart, use_container_width=True)
 
