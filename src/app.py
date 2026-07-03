@@ -346,7 +346,7 @@ with tab_incidents:
     )
     st.altair_chart(year_bar, use_container_width=True)
 
-    st.subheader("Annual Fire incident trend per Municipality")
+    st.subheader("Monthly fire incident trend per municipality")
 
     ba_col1, ba_col2 = st.columns(2)
     all_municipalities = sorted(incidents_df["municipality"].dropna().unique())
