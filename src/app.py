@@ -348,72 +348,86 @@ with tab_incidents:
 
     st.subheader("Burned area trends")
 
-    # --- Per year ---
-    burned_by_year = (
-        filtered.groupby("source_year")["burned_total"]
-        .sum()
-        .reset_index()
-        .rename(columns={"source_year": "year", "burned_total": "burned_area"})
+    ba_view = st.radio(
+        "View by", ["Year", "Forest agency district", "Month (seasonal pattern)"], horizontal=True
     )
-    st.markdown("**Total burned area per year (στρέμματα)**")
-    by_year_chart = (
-        alt.Chart(burned_by_year)
-        .mark_bar()
-        .encode(
-            x=alt.X("year:O", title=None),
-            y=alt.Y("burned_area:Q", title="Burned area (στρ.)"),
-            tooltip=[alt.Tooltip("year:O"), alt.Tooltip("burned_area:Q", format=",.0f", title="Burned (στρ.)")],
-        )
-        .properties(height=250)
-    )
-    st.altair_chart(by_year_chart, use_container_width=True)
 
-    # --- Per forestry district (top 20) ---
-    burned_by_district = (
-        filtered.groupby("forestry_district")["burned_total"]
-        .sum()
-        .reset_index()
-        .rename(columns={"forestry_district": "district", "burned_total": "burned_area"})
-        .dropna(subset=["district"])
-        .sort_values("burned_area", ascending=False)
-        .head(20)
+    ba_col1, ba_col2, ba_col3 = st.columns(3)
+    all_districts = sorted(incidents_df["forestry_district"].dropna().unique())
+    all_years = sorted(incidents_df["source_year"].unique())
+    all_months = list(range(1, 13))
+
+    ba_district = ba_col1.selectbox("District filter", ["All"] + all_districts, key="ba_district")
+    ba_year = ba_col2.selectbox("Year filter", ["All"] + [str(y) for y in all_years], key="ba_year")
+    ba_month = ba_col3.selectbox(
+        "Month filter", ["All"] + [calendar.month_name[m] for m in all_months], key="ba_month"
     )
-    st.markdown("**Total burned area by forestry district — top 20 (στρέμματα)**")
-    by_district_chart = (
-        alt.Chart(burned_by_district)
-        .mark_bar()
-        .encode(
+
+    ba_data = incidents_df.copy()
+    ba_data["month"] = ba_data["start_date"].dt.month
+    if ba_district != "All":
+        ba_data = ba_data[ba_data["forestry_district"] == ba_district]
+    if ba_year != "All":
+        ba_data = ba_data[ba_data["source_year"] == int(ba_year)]
+    if ba_month != "All":
+        ba_month_num = list(calendar.month_name).index(ba_month)
+        ba_data = ba_data[ba_data["month"] == ba_month_num]
+
+    if ba_view == "Year":
+        agg = (
+            ba_data.groupby("source_year")["burned_total"]
+            .sum()
+            .reset_index()
+            .rename(columns={"source_year": "label", "burned_total": "burned_area"})
+            .sort_values("burned_area", ascending=False)
+            .head(20)
+        )
+        chart_enc = dict(
+            x=alt.X("label:O", sort="-y", title=None),
+            y=alt.Y("burned_area:Q", title="Burned area (στρ.)"),
+            tooltip=[alt.Tooltip("label:O", title="Year"), alt.Tooltip("burned_area:Q", format=",.0f", title="Burned (στρ.)")],
+        )
+        height = 280
+    elif ba_view == "Forest agency district":
+        agg = (
+            ba_data.groupby("forestry_district")["burned_total"]
+            .sum()
+            .reset_index()
+            .rename(columns={"forestry_district": "label", "burned_total": "burned_area"})
+            .dropna(subset=["label"])
+            .sort_values("burned_area", ascending=False)
+            .head(20)
+        )
+        chart_enc = dict(
             x=alt.X("burned_area:Q", title="Burned area (στρ.)"),
-            y=alt.Y("district:N", sort="-x", title=None),
-            tooltip=[alt.Tooltip("district:N"), alt.Tooltip("burned_area:Q", format=",.0f", title="Burned (στρ.)")],
+            y=alt.Y("label:N", sort="-x", title=None),
+            tooltip=[alt.Tooltip("label:N", title="District"), alt.Tooltip("burned_area:Q", format=",.0f", title="Burned (στρ.)")],
         )
-        .properties(height=420)
-    )
-    st.altair_chart(by_district_chart, use_container_width=True)
-
-    # --- Seasonal pattern (by month) ---
-    filtered_with_month = filtered.copy()
-    filtered_with_month["month"] = filtered_with_month["start_date"].dt.month
-    burned_by_month = (
-        filtered_with_month.groupby("month")["burned_total"]
-        .sum()
-        .reindex(range(1, 13), fill_value=0)
-        .reset_index()
-        .rename(columns={"month": "month_num", "burned_total": "burned_area"})
-    )
-    burned_by_month["month_name"] = burned_by_month["month_num"].apply(lambda m: calendar.month_abbr[m])
-    st.markdown("**Seasonal pattern — total burned area by month (across all selected years)**")
-    by_month_chart = (
-        alt.Chart(burned_by_month)
-        .mark_bar()
-        .encode(
-            x=alt.X("month_name:N", sort=list(calendar.month_abbr[1:]), title=None),
+        height = 420
+    else:  # Month
+        agg = (
+            ba_data.groupby("month")["burned_total"]
+            .sum()
+            .reindex(range(1, 13), fill_value=0)
+            .reset_index()
+            .rename(columns={"month": "month_num", "burned_total": "burned_area"})
+        )
+        agg["label"] = agg["month_num"].apply(lambda m: calendar.month_abbr[m])
+        agg = agg.sort_values("burned_area", ascending=False).head(20)
+        chart_enc = dict(
+            x=alt.X("label:N", sort=list(calendar.month_abbr[1:]), title=None),
             y=alt.Y("burned_area:Q", title="Burned area (στρ.)"),
-            tooltip=[alt.Tooltip("month_name:N", title="Month"), alt.Tooltip("burned_area:Q", format=",.0f", title="Burned (στρ.)")],
+            tooltip=[alt.Tooltip("label:N", title="Month"), alt.Tooltip("burned_area:Q", format=",.0f", title="Burned (στρ.)")],
         )
-        .properties(height=250)
+        height = 280
+
+    burned_chart = (
+        alt.Chart(agg)
+        .mark_bar()
+        .encode(**chart_enc)
+        .properties(height=height)
     )
-    st.altair_chart(by_month_chart, use_container_width=True)
+    st.altair_chart(burned_chart, use_container_width=True)
 
     st.subheader("Incident records")
     display_columns = [
