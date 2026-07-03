@@ -479,12 +479,8 @@ def render_map_synthesis_tab():
     map_sel_day_choice = col5.selectbox("Day", day_options, key="map_day")
     map_sel_day = None if map_sel_day_choice == "Whole month (average)" else map_sel_day_choice
 
-    # Compute class thresholds from the full incident dataset (consistent across filters)
-    _inc_df = load_fire_incidents(FIRE_INCIDENTS_PATH.stat().st_mtime)
-    _burned = _inc_df["burned_total"].dropna()
-    _burned = _burned[_burned > 0]
-    inc_t1 = float(_burned.quantile(0.33)) if len(_burned) else 10
-    inc_t2 = float(_burned.quantile(0.67)) if len(_burned) else 100
+    inc_t1 = 50
+    inc_t2 = 200
 
     synthesis_map = build_synthesis_map(
         DASARXEIA_MAP_PATH.stat().st_mtime,
@@ -519,9 +515,9 @@ def render_map_synthesis_tab():
 
     # Fire incident size legend
     class_labels = [
-        f"Small  (≤ {inc_t1:,.0f} στρ.)",
-        f"Medium ({inc_t1:,.0f} – {inc_t2:,.0f} στρ.)",
-        f"Large  (> {inc_t2:,.0f} στρ.)",
+        "Small  (0 – 50 στρ.)",
+        "Medium (51 – 200 στρ.)",
+        "Large  (> 200 στρ.)",
     ]
     radii = [c["radius"] for c in INCIDENT_CLASSES]
     max_r = max(radii)
