@@ -349,16 +349,16 @@ with tab_incidents:
     st.subheader("Burned area trends")
 
     ba_col1, ba_col2 = st.columns(2)
-    all_districts = sorted(incidents_df["forestry_district"].dropna().unique())
+    all_municipalities = sorted(incidents_df["municipality"].dropna().unique())
     all_years = sorted(incidents_df["source_year"].unique())
 
-    ba_district = ba_col1.selectbox("District filter", ["All"] + all_districts, key="ba_district")
+    ba_municipality = ba_col1.selectbox("Municipality filter", ["All"] + all_municipalities, key="ba_municipality")
     ba_year = ba_col2.selectbox("Year filter", ["All"] + [str(y) for y in all_years], key="ba_year")
 
     ba_data = incidents_df.copy()
     ba_data["month"] = ba_data["start_date"].dt.month
-    if ba_district != "All":
-        ba_data = ba_data[ba_data["forestry_district"] == ba_district]
+    if ba_municipality != "All":
+        ba_data = ba_data[ba_data["municipality"] == ba_municipality]
     if ba_year != "All":
         ba_data = ba_data[ba_data["source_year"] == int(ba_year)]
 
