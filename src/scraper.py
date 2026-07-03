@@ -26,9 +26,13 @@ REQUEST_DELAY_SECONDS = 1.0  # be polite to the agency's server
 def build_candidate_urls(date: dt.date) -> list:
     yymmdd = date.strftime("%y%m%d")
     yyyy_mm = date.strftime("%Y-%m")
+    # The agency sometimes uploads a map to the previous month's folder (e.g.
+    # the July 1 map lands under 2026-06/). Try both current and previous month.
+    prev_month = (date.replace(day=1) - dt.timedelta(days=1)).strftime("%Y-%m")
     urls = []
     for ext in KNOWN_EXTENSIONS:
-        urls.append((f"{BASE_URL}/{yyyy_mm}/{yymmdd}.{ext}", ext))  # 2023 onward
+        urls.append((f"{BASE_URL}/{yyyy_mm}/{yymmdd}.{ext}", ext))  # 2023 onward, current month
+        urls.append((f"{BASE_URL}/{prev_month}/{yymmdd}.{ext}", ext))  # same layout, prev month folder
         urls.append((f"{BASE_URL}/{yymmdd}.{ext}", ext))  # 2022 and earlier, flat path
     urls.append((f"{BASE_URL}/{yymmdd}_0.gif", "gif"))  # very old archive (~2005-2008)
     return urls
