@@ -5,3 +5,4 @@ __pycache__/
 data/daily_update.log
 data/launchd.*.log
 data/streamlit_local.log
+CLAUDE_CONTEXT.md
