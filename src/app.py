@@ -33,7 +33,7 @@ RISK_NAMES = {
     5: "ΣΥΝΑΓΕΡΜΟΣ (Alarm)",
 }
 
-st.set_page_config(page_title="Greece Fire Risk Dashboard", layout="wide")
+st.set_page_config(page_title="Greece Historic Daily Fire Risk Dashboard", layout="wide")
 
 
 @st.cache_data
@@ -202,7 +202,7 @@ df = load_data(PROCESSED_PATH.stat().st_mtime)
 available_dates = sorted(df["date"].dt.date.unique())
 available_months = sorted({(d.year, d.month) for d in available_dates}, reverse=True)
 
-st.title("🔥 Greece Daily Fire Risk Dashboard")
+st.title("🔥 Greece Historic Daily Fire Risk Dashboard")
 st.caption("Source: Greek Ministry of Climate Crisis & Civil Protection — daily risk prediction maps")
 
 tab_gallery, tab_trends, tab_overview, tab_incidents, tab_map = st.tabs(

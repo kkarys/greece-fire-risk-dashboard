@@ -30,7 +30,7 @@ def process_new_images() -> int:
     Returns the number of dates newly processed."""
     PROCESSED_PATH.parent.mkdir(parents=True, exist_ok=True)
     done_dates = _already_processed_dates()
-    image_paths = sorted(p for p in RAW_DIR.glob("*") if p.suffix.lower() in {".jpg", ".jpeg", ".png"})
+    image_paths = sorted(p for p in RAW_DIR.glob("*") if p.suffix.lower() in {".jpg", ".jpeg", ".png", ".gif"})
 
     new_rows = []
     processed_count = 0

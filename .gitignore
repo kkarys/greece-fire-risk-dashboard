@@ -4,3 +4,4 @@ __pycache__/
 .streamlit/secrets.toml
 data/daily_update.log
 data/launchd.*.log
+data/streamlit_local.log

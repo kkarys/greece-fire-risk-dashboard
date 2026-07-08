@@ -3,8 +3,10 @@
 The agency has changed both file format and URL layout over time. Known
 layouts seen on https://civilprotection.gov.gr/arxeio-imerision-xartwn :
     - .../sites/default/files/YYYY-MM/YYMMDD.{jpg,jpeg,png}   (2023 onward)
-    - .../sites/default/files/YYMMDD.{jpg,jpeg,png}            (2022 and earlier, flat path)
-    - .../sites/default/files/YYMMDD_0.gif                     (very old archive, ~2005-2008)
+    - .../sites/default/files/YYMMDD.{jpg,jpeg,png,gif}        (2022 and earlier, flat path)
+    - .../sites/default/files/YYMMDD_N.{jpg,jpeg,png,gif}      (flat path, Drupal de-dupe suffix;
+                                                                 seen as _0 and _1 in the 2017 archive
+                                                                 when a file was re-uploaded)
 
 We try each known layout/extension combo and take the first that resolves.
 """
@@ -18,6 +20,8 @@ import requests
 
 BASE_URL = "https://civilprotection.gov.gr/sites/default/files"
 KNOWN_EXTENSIONS = ["jpg", "jpeg", "png"]
+FLAT_EXTENSIONS = ["jpg", "jpeg", "png", "gif"]
+DEDUPE_SUFFIXES = range(0, 4)  # observed _0 and _1 in the wild; a couple extra for safety margin
 RAW_DIR = Path(__file__).resolve().parent.parent / "data" / "raw"
 REQUEST_TIMEOUT = 15
 REQUEST_DELAY_SECONDS = 1.0  # be polite to the agency's server
@@ -33,8 +37,11 @@ def build_candidate_urls(date: dt.date) -> list:
     for ext in KNOWN_EXTENSIONS:
         urls.append((f"{BASE_URL}/{yyyy_mm}/{yymmdd}.{ext}", ext))  # 2023 onward, current month
         urls.append((f"{BASE_URL}/{prev_month}/{yymmdd}.{ext}", ext))  # same layout, prev month folder
+    for ext in FLAT_EXTENSIONS:
         urls.append((f"{BASE_URL}/{yymmdd}.{ext}", ext))  # 2022 and earlier, flat path
-    urls.append((f"{BASE_URL}/{yymmdd}_0.gif", "gif"))  # very old archive (~2005-2008)
+    for ext in FLAT_EXTENSIONS:
+        for n in DEDUPE_SUFFIXES:
+            urls.append((f"{BASE_URL}/{yymmdd}_{n}.{ext}", ext))  # Drupal de-dupe suffix, flat path
     return urls
 
 

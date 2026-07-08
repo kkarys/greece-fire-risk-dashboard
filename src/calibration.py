@@ -29,6 +29,20 @@ TEMPLATES = {
         "tx": -15.172413793103452,
         "ty": 84.82758620689654,
     },
+    (767, 805): {  # 2017 archive (GIF format)
+        "scale": 0.4960822350398015,
+        "tx": -11.275010985196305,
+        "ty": 61.42967209728422,
+        # This era's map generator used a visibly different (dimmer) palette;
+        # sampled directly from the legend swatches in a reference image.
+        "legend_colors": {
+            1: (160, 224, 128),
+            2: (166, 202, 240),
+            3: (255, 255, 0),
+            4: (224, 160, 0),
+            5: (255, 0, 0),
+        },
+    },
 }
 
 

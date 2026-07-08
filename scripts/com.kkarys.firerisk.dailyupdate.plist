@@ -7,7 +7,7 @@
 
     <key>ProgramArguments</key>
     <array>
-        <string>/Users/iti-thermi/Documents/SideProject/scripts/daily_update.sh</string>
+        <string>/Users/kkarys/SideProject/scripts/daily_update.sh</string>
     </array>
 
     <key>StartCalendarInterval</key>
@@ -19,9 +19,9 @@
     </dict>
 
     <key>StandardOutPath</key>
-    <string>/Users/iti-thermi/Documents/SideProject/data/launchd.out.log</string>
+    <string>/Users/kkarys/SideProject/data/launchd.out.log</string>
     <key>StandardErrorPath</key>
-    <string>/Users/iti-thermi/Documents/SideProject/data/launchd.err.log</string>
+    <string>/Users/kkarys/SideProject/data/launchd.err.log</string>
 
     <key>RunAtLoad</key>
     <false/>

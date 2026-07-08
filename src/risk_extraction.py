@@ -39,16 +39,16 @@ def _load_districts():
     return [(f["properties"]["DASARXEIO"], shape(f["geometry"])) for f in data["features"]]
 
 
-def _classify_color(rgb):
+def _classify_color(rgb, legend_colors):
     best_level, best_dist = None, float("inf")
-    for level, ref_rgb in LEGEND_COLORS.items():
+    for level, ref_rgb in legend_colors.items():
         dist = sum((a - b) ** 2 for a, b in zip(rgb, ref_rgb))
         if dist < best_dist:
             best_dist, best_level = dist, level
     return best_level, best_dist
 
 
-def _sample_district_color(arr, px, py, h, w, radius=4):
+def _sample_district_color(arr, px, py, h, w, legend_colors, radius=4):
     """Median color over a small patch, falling back to a larger radius
     if the patch is dominated by near-black boundary-line pixels."""
     for r in (radius, radius * 2, radius * 4):
@@ -60,7 +60,7 @@ def _sample_district_color(arr, px, py, h, w, radius=4):
         keep = (brightness > 60) & (brightness < 720)
         candidate = patch[keep] if keep.any() else patch
         rgb = np.median(candidate, axis=0)
-        level, dist = _classify_color(rgb)
+        level, dist = _classify_color(rgb, legend_colors)
         if dist <= LOW_CONFIDENCE_THRESHOLD:
             return rgb, level, dist
     return rgb, level, dist  # best effort after exhausting radii
@@ -71,6 +71,7 @@ def extract_risk_levels(image_path: Union[str, Path]) -> list:
     image_path = Path(image_path)
     im = Image.open(image_path).convert("RGB")
     template = get_template(im.size)
+    legend_colors = template.get("legend_colors", LEGEND_COLORS)
     arr = np.array(im)
     h, w, _ = arr.shape
 
@@ -84,7 +85,7 @@ def extract_risk_levels(image_path: Union[str, Path]) -> list:
                 {"district": name, "risk_level": None, "risk_name": None, "confidence_ok": False}
             )
             continue
-        rgb, level, dist = _sample_district_color(arr, px, py, h, w)
+        rgb, level, dist = _sample_district_color(arr, px, py, h, w, legend_colors)
         results.append(
             {
                 "district": name,

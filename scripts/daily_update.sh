@@ -8,7 +8,7 @@
 
 set -euo pipefail
 
-PROJECT_DIR="/Users/iti-thermi/Documents/SideProject"
+PROJECT_DIR="/Users/kkarys/SideProject"
 PYTHON="/usr/bin/python3"
 LOG_FILE="$PROJECT_DIR/data/daily_update.log"
 
