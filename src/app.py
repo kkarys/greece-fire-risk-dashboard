@@ -33,6 +33,28 @@ RISK_NAMES = {
     5: "ΣΥΝΑΓΕΡΜΟΣ (Alarm)",
 }
 
+# Land-type burned-area columns -> display name, ordered by all-time total burned area
+LAND_TYPE_COLUMNS = {
+    "burned_forest_land": "Forest land",
+    "burned_forest": "Forest",
+    "burned_agricultural": "Agricultural",
+    "burned_grassland": "Grassland",
+    "burned_crop_residue": "Crop residue",
+    "burned_reeds_marsh": "Reeds & marsh",
+    "burned_dump": "Dump",
+    "burned_grove": "Grove",
+}
+LAND_TYPE_COLORS = {
+    "Forest land": "#2a78d6",
+    "Forest": "#1baf7a",
+    "Agricultural": "#eda100",
+    "Grassland": "#008300",
+    "Crop residue": "#4a3aa7",
+    "Reeds & marsh": "#e34948",
+    "Dump": "#e87ba4",
+    "Grove": "#eb6834",
+}
+
 st.set_page_config(page_title="Greece Historic Daily Fire Risk Dashboard", layout="wide")
 
 
@@ -405,6 +427,44 @@ with tab_incidents:
         .properties(height=280)
     )
     st.altair_chart(burned_chart, use_container_width=True)
+
+    st.subheader("Burned area by land type")
+    st.caption("Uses the same municipality/year filters as the chart above.")
+
+    land_type_order = list(LAND_TYPE_COLORS.keys())
+    land_agg = (
+        ba_data.groupby("source_year")[list(LAND_TYPE_COLUMNS)]
+        .sum()
+        .rename(columns=LAND_TYPE_COLUMNS)
+        .reindex(all_years, fill_value=0)
+    )
+    land_long = land_agg.rename_axis("source_year").reset_index().melt(
+        id_vars="source_year", var_name="land_type", value_name="burned_area"
+    )
+    land_long["stack_order"] = land_long["land_type"].map(land_type_order.index)
+
+    land_type_chart = (
+        alt.Chart(land_long)
+        .mark_bar()
+        .encode(
+            x=alt.X("source_year:O", title=None),
+            y=alt.Y("burned_area:Q", title="Burned area (στρ.)", stack="zero"),
+            color=alt.Color(
+                "land_type:N",
+                scale=alt.Scale(domain=land_type_order, range=list(LAND_TYPE_COLORS.values())),
+                sort=land_type_order,
+                legend=alt.Legend(title="Land type"),
+            ),
+            order=alt.Order("stack_order:Q"),
+            tooltip=[
+                alt.Tooltip("source_year:O", title="Year"),
+                alt.Tooltip("land_type:N", title="Land type"),
+                alt.Tooltip("burned_area:Q", format=",.0f", title="Burned (στρ.)"),
+            ],
+        )
+        .properties(height=300)
+    )
+    st.altair_chart(land_type_chart, use_container_width=True)
 
     st.subheader("Incident records")
     display_columns = [
