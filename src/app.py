@@ -213,7 +213,7 @@ def risk_distribution_df(series):
 
 def image_path_for_date(date: dt.date):
     stem = date.strftime("%y%m%d")
-    for ext in ("jpg", "jpeg", "png"):
+    for ext in ("jpg", "jpeg", "png", "gif"):
         p = RAW_DIR / f"{stem}.{ext}"
         if p.exists():
             return p

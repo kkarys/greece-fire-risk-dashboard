@@ -43,6 +43,23 @@ TEMPLATES = {
             5: (255, 0, 0),
         },
     },
+    (1187, 1246): {  # one-off 2017 template (170624.jpg)
+        "scale": 0.7754670777485281,
+        "tx": -30.181826568189216,
+        "ty": 92.67461634443441,
+        # Level 1/3/4/5 sampled from this image's legend swatches (level 1's
+        # swatch matches its actual district fill exactly). Level 2's swatch
+        # reads (201,195,255) but every level-2 district fill actually samples
+        # as (174,165,254) -- a real, consistent mismatch between this map's
+        # legend box and its fill layer -- so level 2 uses the fill color.
+        "legend_colors": {
+            1: (166, 255, 165),
+            2: (174, 165, 254),
+            3: (255, 255, 0),
+            4: (255, 173, 1),
+            5: (254, 0, 0),
+        },
+    },
 }
 
 
