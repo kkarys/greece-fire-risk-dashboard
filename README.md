@@ -45,3 +45,7 @@ streamlit run src/app.py
 ```
 
 Daily data updates (scrape new maps, extract risk levels, commit, push) are handled by `scripts/daily_update.sh`, scheduled via `scripts/com.kkarys.firerisk.dailyupdate.plist` (macOS `launchd`).
+
+## License
+
+[MIT](LICENSE.md)
