@@ -1,4 +1,4 @@
-# 🔥 Greece Historic Daily Fire Risk Dashboard
+# 🔥 Greece Historical Daily Fire Risk Dashboard
 
 **Live app:** https://greece-fire-risk-dashboard.streamlit.app/
 
