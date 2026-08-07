@@ -55,7 +55,7 @@ LAND_TYPE_COLORS = {
     "Grove": "#eb6834",
 }
 
-st.set_page_config(page_title="Greece Historic Daily Fire Risk Dashboard", layout="wide")
+st.set_page_config(page_title="Greece Historical Daily Fire Risk Dashboard", layout="wide")
 
 
 @st.cache_data
