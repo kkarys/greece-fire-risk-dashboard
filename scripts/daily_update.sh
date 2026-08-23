@@ -2,9 +2,10 @@
 # Daily update: fetch any new fire-risk maps, extract risk levels, and push
 # the updated dataset so the deployed Streamlit Cloud app picks it up.
 #
-# Re-fetches the last 5 days (not just "today") so a missed run (e.g. laptop
-# asleep) is caught up automatically. Both the scraper and pipeline are
-# idempotent, so re-running over already-downloaded/processed dates is a no-op.
+# Re-fetches the last 10 days (not just "today") so a missed run (e.g. laptop
+# asleep/off for a while) is caught up automatically. Both the scraper and
+# pipeline are idempotent, so re-running over already-downloaded/processed
+# dates is a no-op.
 
 set -euo pipefail
 
@@ -14,7 +15,7 @@ LOG_FILE="$PROJECT_DIR/data/daily_update.log"
 
 cd "$PROJECT_DIR"
 
-START_DATE=$(date -v-5d +%Y-%m-%d)
+START_DATE=$(date -v-10d +%Y-%m-%d)
 END_DATE=$(date +%Y-%m-%d)
 
 {
